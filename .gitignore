@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and outputs
+logs/
+outputs/
+checkpoints/
+
+# Model weights
+*.pth
+*.pt
+*.ckpt
+
+# Media and generated results
+*.mp4
+*.avi
+*.gif
+
+# Arrays / temp results
+*.npy
+*.npz
+
+# IDE
+.vscode/
+.idea/
+
+# Local config
+.env
