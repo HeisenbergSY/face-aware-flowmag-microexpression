@@ -1,6 +1,12 @@
 # Face-Aware FlowMag for Micro-Expression Spotting
 
-A research-oriented deep learning project that adapts **self-supervised motion magnification** to **micro-expression spotting** on the **CASME II** dataset using **face-aware regularization**.
+A research-engineering project that adapts **self-supervised motion magnification** to **micro-expression spotting** on **CASME II**, extended with **face-aware regularization** for more spatially meaningful facial motion amplification.
+
+**Key focus areas:** motion magnification, optical flow, micro-expression analysis, transfer learning, face-aware regularization, neural engineering applications.
+
+## Project Summary
+
+This project adapts the self-supervised FlowMag framework to spontaneous facial micro-expression analysis on CASME II. The main contribution is a face-aware regularization term that uses landmark-based masks to guide motion magnification toward semantically relevant facial regions such as the eyebrows, eyes, nose, and mouth. The system is evaluated using motion error analysis and a downstream LBP-TOP + SVM classification pipeline.
 
 ## Overview
 
@@ -41,9 +47,9 @@ The training objective combines motion consistency, appearance preservation, and
 `L_total = L_mag + λ_color * L_color + λ_landmark * L_landmark`
 
 Where:
-- `L_mag` enforces motion magnification consistency
-- `L_color` preserves visual appearance
-- `L_landmark` encourages meaningful amplification in relevant facial regions
+- `L_mag` for motion consistency
+- `L_color` for photometric consistency
+- `L_landmark` for spatial guidance in facial regions
 
 ## Dataset
 
@@ -100,10 +106,11 @@ face-aware-flowmag-microexpression/
 Clone the repository and install the dependencies:
 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/HeisenbergSY/face-aware-flowmag-microexpression.git
 cd face-aware-flowmag-microexpression
 pip install -r requirements.txt
 ```
+
 ## Environment Notes
 
 This project was originally developed with the dependency versions listed in `requirements.txt`, including:
@@ -126,11 +133,58 @@ data/
 ├── processed/
 └── masks/
 ```
+
 Suggested usage:
 
 - place original CASME II frame data under `data/raw/CASME2/`
 - place processed frame sequences under `data/processed/`
 - place generated facial landmark masks under `data/masks/`
+
+## Training Setup
+
+The training pipeline was adapted to the CASME II dataset, which contains **247 samples** from **26 subjects**, recorded at **200 fps** with an original spatial resolution of **640 × 480**. For training efficiency and consistency, all facial frames were resized to **256 × 256**.
+
+### Training configuration
+
+- input size: `256 × 256`
+- sequence length: `8` consecutive frames
+- magnification factor: `α = 20`
+- optimizer: `Adam`
+- learning rate: `1e-4`
+- batch size: `4`
+- loss weights: `λ_color = 1.0`, `λ_landmark = 2.0`
+- early stopping patience: `5`
+- random seed: `2` 
+
+### Transfer learning strategy
+
+The model was fine-tuned from pretrained FlowMag weights. To preserve the motion representation learned from generic video data, the encoder and middle block were frozen, while only the decoder layers were updated during training. This was done to reduce overfitting and specialize the model for subtle facial motion in CASME II. 
+
+## Evaluation Protocol
+
+The repository supports evaluation through motion error analysis, LBP-TOP feature extraction, and SVM-based classification under subject-aware validation protocols. The repository evaluates motion magnification as a **downstream micro-expression analysis task** rather than only as a visual enhancement problem. The evaluation pipeline uses **LBP-TOP** feature extraction followed by **SVM** classification, with motion fidelity additionally assessed using **RAFT-based motion error**. 
+
+### Evaluated conditions
+
+The following five conditions were compared:
+
+- original CASME II sequences
+- pretrained FlowMag inference
+- FlowMag with test-time adaptation (TTA)
+- face-aware model with `λ_landmark = 2`
+- face-aware model with `λ_landmark = 5` 
+
+### Classification pipeline
+
+For downstream recognition, each original or magnified sequence is processed through:
+
+1. LBP-TOP feature extraction
+2. linear SVM classification
+3. subject-aware cross-validation using `LOGO` 
+
+### Final protocol choice
+
+Multiple protocols were compared, including Hold-Out, LOO, LOSO, and LOGO. The final reference protocol used in the thesis was **LOGO**, because it provided subject-aware separation, reproducibility, and close alignment with the original CASME II benchmark behavior. 
 
 ## Training
 
@@ -139,31 +193,33 @@ Example training command:
 ```bash
 python -m src.train
 ```
-Additional training configurations can be placed in the configs/ folder.
+Additional training configurations can be placed in the `configs/` folder.
 
 ## Inference
+
 Example inference command:
+
 ```bash
 python -m src.inference
 ```
 This script generates motion-magnified frame sequences or videos from selected input frames.
 
 ## Test-Time Adaptation
+
+This mode adapts the model at inference time for sequence-specific refinement.
 Example command:
+
 ```bash
 python -m src.test_time_adapt
 ```
-## Evaluation
 
-The repository is designed to support evaluation through:
+## Visual Examples
 
-- motion-based qualitative inspection
-- optical flow consistency analysis
-- LBP-TOP feature extraction
-- SVM-based classification experiments
-- comparison across baseline and face-aware variants
+### Landmark-aware mask visualization
+![Landmark Mask Visualization](docs/figures/landmark_mask_visualization.png)
 
-Evaluation-related scripts and supporting files can be placed in the `evaluation/` directory.
+### Training loss curves
+![Training Loss Curves](docs/figures/loss_curves_first_20_epochs.svg)
 
 ## Experimental Focus
 
@@ -178,6 +234,14 @@ This supports analysis of both:
 
 - visual quality of motion amplification
 - downstream utility for micro-expression analysis
+
+## Key Findings
+
+- Direct inference with the pretrained FlowMag model achieved the lowest motion error.
+- Face-aware regularization improved spatial interpretability of amplified facial motion.
+- Moderate regularization provided better behavior than stronger landmark weighting.
+- Stronger regularization degraded downstream classification performance.
+- Overall, the face-aware approach improved interpretability but did not outperform the pretrained baseline in classification accuracy.
 
 ## Skills Demonstrated
 
